@@ -29,6 +29,7 @@ import typing as T
 
 from . import WrapMode
 from ..mesonlib import git, GIT, ProgressBar, MesonException
+from . import vcpkg
 
 if T.TYPE_CHECKING:
     import http.client
@@ -189,6 +190,8 @@ class Resolver:
                     self.get_hg()
                 elif self.wrap.type == "svn":
                     self.get_svn()
+                elif self.wrap.type == "vcpkg":
+                    self.get_vcpkg()
                 else:
                     raise WrapException('Unknown wrap type {!r}'.format(self.wrap.type))
 
@@ -318,6 +321,12 @@ class Resolver:
             raise WrapException('SVN program not found.')
         subprocess.check_call([svn, 'checkout', '-r', revno, self.wrap.get('url'),
                                self.directory], cwd=self.subdir_root)
+
+    def get_vcpkg(self) -> None:
+        vcroot = vcpkg.get_vcroot()
+        if vcroot == None:
+            raise WrapException('Userwide installation of Vcpkg not found.')
+        vcpkg.install(vcroot, vcroot, self.directory)
 
     def get_data(self, urlstring: str) -> T.Tuple[str, str]:
         blocksize = 10 * 1024
